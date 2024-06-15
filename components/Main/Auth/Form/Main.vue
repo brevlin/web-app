@@ -64,7 +64,7 @@ const authentification = async () => {
             });
 
             console.log(res);
-
+            // 83a5030c-85a4-4c51-954c-3c09bb85097b
             if (res) {
                 open();
             }
@@ -210,7 +210,9 @@ const authentification = async () => {
       type="submit"
       class="link d-inline-flex justify-content-center align-items-center gap-2 py-4 px-6 border border-primary-key bg-primary-key rounded-1 fw-bold clr-white border-0 w-100 mt-8 :arrow-btn"
     >
-      <span>Se connecter</span>
+      <span>
+        {{ isRegistering ? "Créer un compte" : "Se connecter" }}
+      </span>
     </button>
 
     <p class="mb-0 clr-neutral-80 text-center mt-8">
