@@ -59,17 +59,19 @@ const authentification = async () => {
             // alert('Registration successful');
 
             console.log(1);
-            const res = await $fetch('http://localhost:3001/auth/signup', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: {
-                    username: username.value,
-                    email: email.value,
-                    password: password.value,
-                },
-            })
+            // const res = await $fetch('http://localhost:3001/auth/signup', {
+            //     method: 'POST',
+            //     headers: {
+            //         'Content-Type': 'application/json',
+            //     },
+            //     body: {
+            //         username: username.value,
+            //         email: email.value,
+            //         password: password.value,
+            //     },
+            // })
+
+            const res = await auth('signup', username.value, email.value, password.value);
 
             console.log(2);
             console.log(res);
