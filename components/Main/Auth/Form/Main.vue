@@ -1,12 +1,14 @@
 <script>
 import { ElNotification } from 'element-plus'
 
-const open = () => {
+const open = async () => {
+  console.log("test");
   ElNotification.success({
     title: 'Vérification',
     message: 'Un email de confirmation vous a été envoyé',
     showClose: false,
   })
+  console.log("test 2");
 }
 
 export default {
@@ -25,6 +27,9 @@ export default {
 </script>
 
 <script setup>
+import { useEmailStore } from '#imports';
+import axios from 'axios';
+
 const isRegistering = ref(false);
 const isPasswordVisible = ref(false);
 
@@ -41,7 +46,9 @@ const email = ref('');
 const password = ref('');
 
 const authentification = async () => {
+  console.log('test');
     try {
+      console.log(isRegistering.value);
         if (isRegistering.value) {
             // Register
             // const response = await axios.post('http://localhost:3001/register', {
@@ -51,22 +58,30 @@ const authentification = async () => {
             // });
             // alert('Registration successful');
 
+            console.log(1);
             const res = await $fetch('http://localhost:3001/auth/signup', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
+                body: {
                     username: username.value,
                     email: email.value,
                     password: password.value,
-                }),
-            });
+                },
+            })
 
+            console.log(2);
             console.log(res);
             // 83a5030c-85a4-4c51-954c-3c09bb85097b
             if (res) {
-                open();
+              const emailStore = useEmailStore();
+              emailStore.clear();
+              emailStore.setEmail(email.value);
+
+              console.log(emailStore.email);
+              
+              open();
             }
         } else {
             // Login

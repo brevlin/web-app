@@ -7,7 +7,8 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "launch": "npm run build && npm run dev"
   },
   "dependencies": {
     "@artmizu/nuxt-prometheus": "^2.3.1",
@@ -16,11 +17,14 @@
     "@nuxtjs/google-fonts": "^3.2.0",
     "@vueuse/nuxt": "^10.9.0",
     "aos": "^2.3.4",
+    "axios": "^1.7.2",
     "nuxt": "^3.11.2",
+    "pinia": "^2.1.7",
     "vue": "^3.4.27",
     "vue-router": "^4.3.2"
   },
   "devDependencies": {
+    "@pinia-plugin-persistedstate/nuxt": "^1.2.0",
     "@types/aos": "^3.0.7",
     "nuxt-icon": "^0.6.10"
   }

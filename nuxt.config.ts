@@ -8,7 +8,8 @@ export default defineNuxtConfig({
     '@vueuse/nuxt',
     "@nuxt/image",
     "@nuxtjs/google-fonts",
-    "@element-plus/nuxt"
+    "@element-plus/nuxt",
+    '@pinia/nuxt',
   ],
   plugins: [
     { src: '~/plugins/aos', mode: 'client' },
