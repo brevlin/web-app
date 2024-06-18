@@ -13,6 +13,6 @@ export const useEmailStore = defineStore('email', {
     },
   },
   persist: {
-    enabled: true,
-  },
+    storage: persistedState.localStorage
+  }
 });

@@ -1,5 +1,5 @@
-<script>
-import { ElNotification } from 'element-plus'
+<script lang="ts">
+import { ElNotification } from 'element-plus';
 
 const open = async () => {
   console.log("test");
@@ -7,9 +7,9 @@ const open = async () => {
     title: 'Vérification',
     message: 'Un email de confirmation vous a été envoyé',
     showClose: false,
-  })
+  });
   console.log("test 2");
-}
+};
 
 export default {
   name: "Main",
@@ -26,9 +26,11 @@ export default {
 };
 </script>
 
-<script setup>
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
 import { useEmailStore } from '#imports';
-import axios from 'axios';
+
+console.log(1);
 
 const isRegistering = ref(false);
 const isPasswordVisible = ref(false);
@@ -47,77 +49,65 @@ const password = ref('');
 
 const authentification = async () => {
   console.log('test');
-    try {
-      console.log(isRegistering.value);
-        if (isRegistering.value) {
-            // Register
-            // const response = await axios.post('http://localhost:3001/register', {
-            //     username: username.value,
-            //     email: email.value,
-            //     password: password.value,
-            // });
-            // alert('Registration successful');
+  try {
+    console.log(isRegistering.value);
+    if (isRegistering.value) {
+      // Register
+      console.log(1);
+      // const res = await auth('signup', username.value, email.value, password.value);
+      const res = await $fetch('http://localhost:3001/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: username.value,
+          email: email.value,
+          password: password.value,
+        }),
+      })
+      console.log(2);
+      console.log(res);
+      if (res) {
+        const emailStore = useEmailStore();
+        emailStore.clearEmail();
+        emailStore.setEmail(email.value);
+        console.log('EMAIL :', emailStore.email);
+        open();
+      }
+    } else {
+      // Login
+      const res = await $fetch('http://localhost:3001/auth/signin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email.value,
+          password: password.value,
+        }),
+      }) as any;
 
-            console.log(1);
-            // const res = await $fetch('http://localhost:3001/auth/signup', {
-            //     method: 'POST',
-            //     headers: {
-            //         'Content-Type': 'application/json',
-            //     },
-            //     body: {
-            //         username: username.value,
-            //         email: email.value,
-            //         password: password.value,
-            //     },
-            // })
-
-            const res = await auth('signup', username.value, email.value, password.value);
-
-            console.log(2);
-            console.log(res);
-            // 83a5030c-85a4-4c51-954c-3c09bb85097b
-            if (res) {
-              const emailStore = useEmailStore();
-              emailStore.clear();
-              emailStore.setEmail(email.value);
-
-              console.log(emailStore.email);
-              
-              open();
-            }
-        } else {
-            // Login
-            // const response = await axios.post('http://localhost:3001/login', {
-            //     email: email.value,
-            //     password: password.value,
-            // });
-            // const token = response.data.token;
-            // // Save the token to localStorage or a cookie
-            // localStorage.setItem('token', token);
-            // alert('Login successful');
-
-            const res = await $fetch('http://localhost:3001/auth/signin', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    email: email.value,
-                    password: password.value,
-                }),
-            });
-
-            console.log(res);
-        }
-    } catch (error) {
-        console.error(error);
-        alert('Authentication failed');
+      console.log(res);
+      
     }
+  } catch (error) {
+    console.error(error);
+    alert('Authentication failed');
+  }
 };
+
+onMounted(() => {
+  console.log(2);
+  // You can call authentification() here if needed, but it doesn't seem necessary based on your initial code
+  // authentification();
+});
+
 </script>
 
+
 <template>
-  <form @submit.prevent="authentification()">
+  <form @submit.prevent="authentification">
     <div
       class="d-flex flex-wrap gap-xl-6 gap-4 align-items-center justify-content-center mt-6"
     >

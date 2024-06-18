@@ -45,7 +45,6 @@ onMounted(async () => {
             'Content-Type': 'application/json',
         },
         body: {
-            email,
             token,
             type: 'signup',
         },

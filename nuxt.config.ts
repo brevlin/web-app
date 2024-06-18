@@ -10,6 +10,7 @@ export default defineNuxtConfig({
     "@nuxtjs/google-fonts",
     "@element-plus/nuxt",
     '@pinia/nuxt',
+    '@pinia-plugin-persistedstate/nuxt',
   ],
   plugins: [
     { src: '~/plugins/aos', mode: 'client' },
