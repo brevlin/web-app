@@ -1,3 +1,9 @@
+<script setup>
+import { useProcessStore } from '#imports';
+
+const { isOnProcess } = useProcessStore();
+</script>
+
 <template>
     <div class="bg-black body-clip">
         <div class="login-page">

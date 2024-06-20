@@ -22,15 +22,11 @@ onMounted(async () => {
     } else {
         console.log('Error');
     }
-    
-    // Get the access token value from the URL
-    // Slicing
 
     const token = fullPath.slice(fullPath.indexOf('#access_token=') + 14).split('&')[0];
 
     console.log(token);
 
-    // Get the email in the pinia store
     const emailStore = useEmailStore();
 
     console.log(emailStore);
@@ -45,36 +41,19 @@ onMounted(async () => {
             'Content-Type': 'application/json',
         },
         body: {
-            token,
-            type: 'signup',
+            token
         },
     })
 
     console.log(checkToken);
 
-    // // ! C'est possible que le hash soit vide si l'user à rentrer manuellement l'url dans le navigateur
-    // if (hash == '') {
-    //     navigateTo('/')
-    // }
-
-    // const params = new URLSearchParams(hash.slice(1));
-
-    // // Pour récupérer les paramètres de l'url
-    // // const ... = params.get('...')
-
-    // console.log(params);
-
-    /**
-     * Processus :
-     * 
-     * 1. Récupérer le full path
-     * 2. Vérifier si le hash contient #access_token
-     * 3. Si oui, on affiche un message de succès
-     * 4. Si non, on affiche un message d'erreur
-     */
+    // C'est possible que le hash soit vide si l'user à rentrer manuellement l'url dans le navigateur
+    if (hash == '') {
+        navigateTo('/')
+    }
 });
 </script>
 
 <template>
-    
+
 </template>

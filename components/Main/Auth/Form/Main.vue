@@ -1,14 +1,13 @@
 <script lang="ts">
 import { ElNotification } from 'element-plus';
 
-const open = async () => {
-  console.log("test");
-  ElNotification.success({
-    title: 'Vérification',
-    message: 'Un email de confirmation vous a été envoyé',
+const errorNotification = async () => {
+  ElNotification.error({
+    title: 'Erreur',
+    message: 'Une erreur est survenue lors de l\'authentification. Veuillez réessayer.',
     showClose: false,
+    duration: 3500,
   });
-  console.log("test 2");
 };
 
 export default {
@@ -28,7 +27,7 @@ export default {
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { useEmailStore } from '#imports';
+import { useEmailStore, useProcessStore } from '#imports';
 
 console.log(1);
 
@@ -43,18 +42,67 @@ const togglePasswordVisibility = () => {
   isPasswordVisible.value = !isPasswordVisible.value;
 };
 
+const processBackgroundProcess = () => {
+  const processBackgroundLoading = ElLoading.service({
+    lock: true,
+    background: 'rgba(0, 0, 0, 0.7)',
+  })
+
+  if (!isProcessing.value) {
+    processBackgroundLoading.close();
+  }
+}
+
 const username = ref('');
 const email = ref('');
 const password = ref('');
 
+const usernameIsTooShort = ref(false);
+const emailIsInvalid = ref(false);
+const passwordIsInvalid = ref(false);
+const passwordIsTooWeak = ref(false);
+const isProcessing = ref(false);
+
 const authentification = async () => {
-  console.log('test');
+  usernameIsTooShort.value = false;
+  emailIsInvalid.value = false;
+  passwordIsInvalid.value = false;
+  passwordIsTooWeak.value = false;
+
   try {
-    console.log(isRegistering.value);
     if (isRegistering.value) {
-      // Register
-      console.log(1);
       // const res = await auth('signup', username.value, email.value, password.value);
+      console.log(1);
+      
+      if (username.value.length < 3) {
+        usernameIsTooShort.value = true;
+      }
+
+      const emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value);
+
+      if (!emailIsValid) {
+        emailIsInvalid.value = true;
+      }
+
+      const passwordIsValid = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(password.value);
+
+      if (!passwordIsValid) {
+        passwordIsInvalid.value = true;
+      }
+
+      if (usernameIsTooShort.value || emailIsInvalid.value || passwordIsInvalid.value) {
+        return errorNotification();
+      }
+
+      const processing = useProcessStore();
+      // processing.setProcessStatus(true);
+      processing.isOnProcess = true
+
+      console.log('PROCESS STATUS :', processing.isOnProcess);
+      
+      
+      isProcessing.value = true;
+
       const res = await $fetch('http://localhost:3001/auth/signup', {
         method: 'POST',
         headers: {
@@ -65,16 +113,25 @@ const authentification = async () => {
           email: email.value,
           password: password.value,
         }),
-      })
-      console.log(2);
-      console.log(res);
+      }) as any
+
+      if (res && res.name == 'AuthWeakPasswordError') {
+        passwordIsTooWeak.value = true;
+        isProcessing.value = false;
+        return errorNotification();
+      }
+
       if (res) {
         const emailStore = useEmailStore();
         emailStore.clearEmail();
         emailStore.setEmail(email.value);
         console.log('EMAIL :', emailStore.email);
-        open();
+        isProcessing.value = false;
+
+        // alert('Regardes tes mails pour valider ton compte !') ! REMPLACER PAR LA REDIRECTION VERS UNE AUTRE PAGE
       }
+
+      processing.clearProcessStatus();
     } else {
       // Login
       const res = await $fetch('http://localhost:3001/auth/signin', {
@@ -86,7 +143,7 @@ const authentification = async () => {
           email: email.value,
           password: password.value,
         }),
-      }) as any;
+      });
 
       console.log(res);
       
@@ -108,6 +165,17 @@ onMounted(() => {
 
 <template>
   <form @submit.prevent="authentification">
+    <div class="position-absolute left-0 w-100 z-3" data-aos="zoom-in" v-if="isProcessing">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="position-relative top-50pt w-100 h-100">
+        <g stroke="white">
+          <circle cx="12" cy="12" r="9.5" fill="none" stroke-linecap="round" stroke-width="0.9">
+            <animate attributeName="stroke-dasharray" calcMode="spline" dur="1.5s" keySplines="0.42,0,0.58,1;0.42,0,0.58,1;0.42,0,0.58,1" keyTimes="0;0.475;0.95;1" repeatCount="indefinite" values="0 150;42 150;42 150;42 150"/>
+            <animate attributeName="stroke-dashoffset" calcMode="spline" dur="1.5s" keySplines="0.42,0,0.58,1;0.42,0,0.58,1;0.42,0,0.58,1" keyTimes="0;0.475;0.95;1" repeatCount="indefinite" values="0;-16;-59;-59"/>
+          </circle>
+          <animateTransform attributeName="transform" dur="2s" repeatCount="indefinite" type="rotate" values="0 12 12;360 12 12"/>
+        </g>
+      </svg>
+    </div>
     <div
       class="d-flex flex-wrap gap-xl-6 gap-4 align-items-center justify-content-center mt-6"
     >
@@ -122,37 +190,86 @@ onMounted(() => {
         name="Linkedin"
       />
     </div>
+    <p class="mb-0 clr-neutral-80 text-center mt-8">
+      {{ isRegistering ? "J'ai déjà un compte" : "Vous n'avez pas de compte ?" }}
+      <br>
+      <ElLink type="primary" :underline="false" @click="toggleForm">
+        {{ isRegistering ? "Se connecter" : "Créer un compte" }}
+      </ElLink>
+    </p>
     <div class="mt-8" v-if="isRegistering" data-aos="zoom-in">
-      <label class="clr-neutral-80 mb-2">Nom d'utilisateur</label>
+      <ElTooltip
+        content="Votre nom complet doit contenir au moins 3 caractères"
+        placement="top-start"
+        v-if="usernameIsTooShort"
+        >
+        <label class="clr-neutral-80 mb-2">
+          Nom complet
+          <span v-if="usernameIsTooShort">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 128 128"><g fill="#A7001E"><path d="M68.97 31.66c-.64-.49-1.38-.85-2.24-1.05c-.85-.19-1.75-.3-2.72-.3c-.97 0-1.88.1-2.74.3c-.87.19-1.61.55-2.26 1.05c-.64.49-1.14 1.14-1.51 1.95c-.36.81-.55 1.83-.55 3.04c0 1.19.19 2.19.55 3.02c.37.81.87 1.48 1.51 1.97s1.39.85 2.26 1.06c.86.21 1.77.32 2.74.32c.96 0 1.87-.11 2.72-.32c.86-.21 1.6-.57 2.24-1.06c.64-.49 1.15-1.16 1.53-1.97c.38-.83.57-1.83.57-3.02c0-1.22-.19-2.24-.57-3.04c-.38-.81-.89-1.46-1.53-1.95M57.52 48.94h12.97v47.51H57.52z"/><path d="M64 .41C28.93.41.41 28.93.41 64c0 35.06 28.52 63.59 63.58 63.59S127.58 99.07 127.58 64C127.59 28.93 99.06.41 64 .41m0 118C34 118.41 9.6 94 9.6 64C9.6 34 34 9.59 64 9.59S118.41 34 118.41 64.01C118.4 94 93.99 118.41 64 118.41"/></g></svg>
+          </span>
+        </label>
+      </ElTooltip>
+      <label class="clr-neutral-80 mb-2" v-if="!usernameIsTooShort">
+        Nom complet
+      </label>
       <input
         v-model="username"
         type="text"
         name="#0"
         class="form-control border border-neutral-17 clr-neutral-90 :focus-clr-current rounded-2 py-4 px-4 bg-neutral-4 placeholder-50 focus-bg-none"
-        placeholder="Entrez votre nom d'utilisateur"
+        placeholder="Jean Dupont"
+        :class="{ 'border-danger-10': usernameIsTooShort }"
       />
     </div>
 
     <div class="mt-8">
-      <label class="clr-neutral-80 mb-2">Email</label>
+      <ElTooltip
+        content="L'adresse mail renseignée n'est pas correcte"
+        placement="top-start"
+        v-if="emailIsInvalid"
+        >
+      <label class="clr-neutral-80 mb-2">
+        Adresse mail
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 128 128"><g fill="#A7001E"><path d="M68.97 31.66c-.64-.49-1.38-.85-2.24-1.05c-.85-.19-1.75-.3-2.72-.3c-.97 0-1.88.1-2.74.3c-.87.19-1.61.55-2.26 1.05c-.64.49-1.14 1.14-1.51 1.95c-.36.81-.55 1.83-.55 3.04c0 1.19.19 2.19.55 3.02c.37.81.87 1.48 1.51 1.97s1.39.85 2.26 1.06c.86.21 1.77.32 2.74.32c.96 0 1.87-.11 2.72-.32c.86-.21 1.6-.57 2.24-1.06c.64-.49 1.15-1.16 1.53-1.97c.38-.83.57-1.83.57-3.02c0-1.22-.19-2.24-.57-3.04c-.38-.81-.89-1.46-1.53-1.95M57.52 48.94h12.97v47.51H57.52z"/><path d="M64 .41C28.93.41.41 28.93.41 64c0 35.06 28.52 63.59 63.58 63.59S127.58 99.07 127.58 64C127.59 28.93 99.06.41 64 .41m0 118C34 118.41 9.6 94 9.6 64C9.6 34 34 9.59 64 9.59S118.41 34 118.41 64.01C118.4 94 93.99 118.41 64 118.41"/></g></svg>
+      </label>
+      </ElTooltip>
+      <label class="clr-neutral-80 mb-2" v-if="!emailIsInvalid">
+        Adresse mail
+      </label>
       <input
         v-model="email"
         type="email"
         name="#0"
         class="form-control border border-neutral-17 clr-neutral-90 :focus-clr-current rounded-2 py-4 px-4 bg-neutral-4 placeholder-50 focus-bg-none"
-        placeholder="Entrez votre adresse mail"
+        placeholder="jean.dupont.pro@gmail.com"
+        :class="{ 'border-danger-10': emailIsInvalid }"
       />
     </div>
 
     <div class="mt-8">
-      <label class="clr-neutral-80 mb-2">Mot de passe</label>
+      <ElTooltip
+        :content="passwordIsInvalid ? 'Le mot de passe renseigné doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial' : 'Le mot de passe renseigné est considéré comme trop faible et peut être facilement deviné, veuillez en choisir un plus robuste'"
+        placement="top"
+        v-if="passwordIsInvalid || passwordIsTooWeak"
+        >
+        <label class="clr-neutral-80 mb-2" v-if="passwordIsInvalid">
+          Mot de passe
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 128 128"><g fill="#A7001E"><path d="M68.97 31.66c-.64-.49-1.38-.85-2.24-1.05c-.85-.19-1.75-.3-2.72-.3c-.97 0-1.88.1-2.74.3c-.87.19-1.61.55-2.26 1.05c-.64.49-1.14 1.14-1.51 1.95c-.36.81-.55 1.83-.55 3.04c0 1.19.19 2.19.55 3.02c.37.81.87 1.48 1.51 1.97s1.39.85 2.26 1.06c.86.21 1.77.32 2.74.32c.96 0 1.87-.11 2.72-.32c.86-.21 1.6-.57 2.24-1.06c.64-.49 1.15-1.16 1.53-1.97c.38-.83.57-1.83.57-3.02c0-1.22-.19-2.24-.57-3.04c-.38-.81-.89-1.46-1.53-1.95M57.52 48.94h12.97v47.51H57.52z"/><path d="M64 .41C28.93.41.41 28.93.41 64c0 35.06 28.52 63.59 63.58 63.59S127.58 99.07 127.58 64C127.59 28.93 99.06.41 64 .41m0 118C34 118.41 9.6 94 9.6 64C9.6 34 34 9.59 64 9.59S118.41 34 118.41 64.01C118.4 94 93.99 118.41 64 118.41"/></g></svg>
+        </label>
+      </ElTooltip>
+      <label class="clr-neutral-80 mb-2" v-if="!passwordIsInvalid">
+        Mot de passe
+      </label>
+
       <div class="pass-field-area">
         <input
-            v-model="password"
+          v-model="password"
           :type="isPasswordVisible ? 'text' : 'password'"
           name="#0"
           class="form-control border border-neutral-17 clr-neutral-90 :focus-clr-current rounded-2 py-4 px-4 bg-neutral-4 placeholder-50 focus-bg-none"
-          placeholder="Entrez votre mot de passe"
+          placeholder="Mot de passe robuste"
+          :class="{ 'border-danger-10': passwordIsInvalid || passwordIsTooWeak }"
         />
         <button
           type="button"
@@ -213,20 +330,29 @@ onMounted(() => {
       >
     </div>
 
-    <button
+    <!-- <button
       type="submit"
       class="link d-inline-flex justify-content-center align-items-center gap-2 py-4 px-6 border border-primary-key bg-primary-key rounded-1 fw-bold clr-white border-0 w-100 mt-8 :arrow-btn"
     >
-      <span>
-        {{ isRegistering ? "Créer un compte" : "Se connecter" }}
+      <span v-if="isRegistering">
+        <p v-if="!isProcessing">Créer un compte</p>
+        <span v-if="isProcessing">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><g stroke="currentColor"><circle cx="12" cy="12" r="9.5" fill="none" stroke-linecap="round" stroke-width="3"><animate attributeName="stroke-dasharray" calcMode="spline" dur="1.5s" keySplines="0.42,0,0.58,1;0.42,0,0.58,1;0.42,0,0.58,1" keyTimes="0;0.475;0.95;1" repeatCount="indefinite" values="0 150;42 150;42 150;42 150"/><animate attributeName="stroke-dashoffset" calcMode="spline" dur="1.5s" keySplines="0.42,0,0.58,1;0.42,0,0.58,1;0.42,0,0.58,1" keyTimes="0;0.475;0.95;1" repeatCount="indefinite" values="0;-16;-59;-59"/></circle><animateTransform attributeName="transform" dur="2s" repeatCount="indefinite" type="rotate" values="0 12 12;360 12 12"/></g></svg>
+        </span>
       </span>
-    </button>
+      <span v-else>
+        Se connecter
+        <span v-if="isProcessing">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><g stroke="currentColor"><circle cx="12" cy="12" r="9.5" fill="none" stroke-linecap="round" stroke-width="3"><animate attributeName="stroke-dasharray" calcMode="spline" dur="1.5s" keySplines="0.42,0,0.58,1;0.42,0,0.58,1;0.42,0,0.58,1" keyTimes="0;0.475;0.95;1" repeatCount="indefinite" values="0 150;42 150;42 150;42 150"/><animate attributeName="stroke-dashoffset" calcMode="spline" dur="1.5s" keySplines="0.42,0,0.58,1;0.42,0,0.58,1;0.42,0,0.58,1" keyTimes="0;0.475;0.95;1" repeatCount="indefinite" values="0;-16;-59;-59"/></circle><animateTransform attributeName="transform" dur="2s" repeatCount="indefinite" type="rotate" values="0 12 12;360 12 12"/></g></svg>
+        </span>
+      </span>
+    </button> -->
 
-    <p class="mb-0 clr-neutral-80 text-center mt-8">
-      <ElButton type="primary" text @click="toggleForm">
-        {{ isRegistering ? "Se connecter" : "Créer un compte" }}
-      </ElButton>
-    </p>
+    <div class="width-100">
+      <SnippetButtonAuth class="link d-inline-flex justify-content-center align-items-center gap-2 py-4 px-6 border border-primary-key rounded-1 fw-bold clr-white border-0 w-100 mt-8"
+        :name="isRegistering ? 'Créer un compte' : 'Se connecter'"
+      />
+    </div>
 
     <div class="text-center mt-6">
       <NuxtLink
@@ -246,5 +372,13 @@ onMounted(() => {
 
 #n30dash:checked + label {
   color: #fff;
+}
+
+.top-50pt {
+  top: 50%
+}
+
+.left-0 {
+  left: 0;
 }
 </style>
