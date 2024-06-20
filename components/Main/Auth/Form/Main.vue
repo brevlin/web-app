@@ -127,6 +127,7 @@ const authentification = async () => {
         emailStore.setEmail(email.value);
         console.log('EMAIL :', emailStore.email);
         isProcessing.value = false;
+        navigateTo('/auth/waiting');
 
         // alert('Regardes tes mails pour valider ton compte !') ! REMPLACER PAR LA REDIRECTION VERS UNE AUTRE PAGE
       }
@@ -150,7 +151,8 @@ const authentification = async () => {
     }
   } catch (error) {
     console.error(error);
-    alert('Authentication failed');
+    isProcessing.value = false;
+    errorNotification();
   }
 };
 
