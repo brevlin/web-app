@@ -9,25 +9,11 @@ const errorNotification = async () => {
     duration: 3500,
   });
 };
-
-export default {
-  name: "Main",
-  props: {
-    name: {
-      type: String,
-      required: true,
-    },
-    placeholder: {
-      type: String,
-      required: true,
-    },
-  },
-};
 </script>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useEmailStore, useProcessStore } from '#imports';
+import { ref } from 'vue';
+import { useEmailStore, useProcessStore, useToken, usePasswordStore } from '#imports';
 
 console.log(1);
 
@@ -41,17 +27,6 @@ const toggleForm = () => {
 const togglePasswordVisibility = () => {
   isPasswordVisible.value = !isPasswordVisible.value;
 };
-
-const processBackgroundProcess = () => {
-  const processBackgroundLoading = ElLoading.service({
-    lock: true,
-    background: 'rgba(0, 0, 0, 0.7)',
-  })
-
-  if (!isProcessing.value) {
-    processBackgroundLoading.close();
-  }
-}
 
 const username = ref('');
 const email = ref('');
@@ -73,7 +48,7 @@ const authentification = async () => {
     if (isRegistering.value) {
       // const res = await auth('signup', username.value, email.value, password.value);
       console.log(1);
-      
+
       if (username.value.length < 3) {
         usernameIsTooShort.value = true;
       }
@@ -99,11 +74,11 @@ const authentification = async () => {
       processing.isOnProcess = true
 
       console.log('PROCESS STATUS :', processing.isOnProcess);
-      
-      
+
+
       isProcessing.value = true;
 
-      const res = await $fetch('http://localhost:3001/auth/signup', {
+      const res = await $fetch('http://localhost:3002/auth/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -115,6 +90,8 @@ const authentification = async () => {
         }),
       }) as any
 
+      console.log(res);
+
       if (res && res.name == 'AuthWeakPasswordError') {
         passwordIsTooWeak.value = true;
         isProcessing.value = false;
@@ -125,17 +102,29 @@ const authentification = async () => {
         const emailStore = useEmailStore();
         emailStore.clearEmail();
         emailStore.setEmail(email.value);
+
+        const passwordStore = usePasswordStore();
+        passwordStore.clearPassword()
+        passwordStore.setPassword(password.value);
+
+        const tokenStore = useToken();
+        tokenStore.clearToken();
+
+        const nameStore = useNameStore();
+        nameStore.clearName();
+        nameStore.setName(username.value);
+
+        console.log('TOKEN :', tokenStore.token); // TODO Normalement, le token est vide ici
+
         console.log('EMAIL :', emailStore.email);
         isProcessing.value = false;
         navigateTo('/auth/waiting');
-
-        // alert('Regardes tes mails pour valider ton compte !') ! REMPLACER PAR LA REDIRECTION VERS UNE AUTRE PAGE
       }
 
       processing.clearProcessStatus();
     } else {
       // Login
-      const res = await $fetch('http://localhost:3001/auth/signin', {
+      const res = await $fetch('http://localhost:3002/auth/signin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -147,21 +136,14 @@ const authentification = async () => {
       });
 
       console.log(res);
-      
+
     }
   } catch (error) {
     console.error(error);
     isProcessing.value = false;
-    errorNotification();
+    await errorNotification();
   }
 };
-
-onMounted(() => {
-  console.log(2);
-  // You can call authentification() here if needed, but it doesn't seem necessary based on your initial code
-  // authentification();
-});
-
 </script>
 
 
