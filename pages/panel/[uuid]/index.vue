@@ -48,8 +48,8 @@ export default {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            tableName: 'SchoolMod',
-            columnName: 'isUnitConfigured',
+            tableName: 'User',
+            columnName: 'is_config',
             rowName: 'uid',
             rowValue: userId,
           })
@@ -57,11 +57,12 @@ export default {
 
         console.log('response:', response)
 
-        if (response) {
-          navigateTo('/auth')
+        if (!response) {
+          navigateTo(`/panel/${userId}/config`)
         }
       } catch (error) {
-        console.error('Error verifying token:', error)
+        navigateTo(`/panel/${userId}/config`)
+        console.error('Error checking if unit is configured:', error)
       }
     }
 

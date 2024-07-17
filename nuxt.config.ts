@@ -19,6 +19,7 @@ export default defineNuxtConfig({
     '~/assets/css/style.css',
     '~/assets/css/plugins.css',
   ],
+  // @ts-ignore
   supabase: {
     redirect: false,
   },
